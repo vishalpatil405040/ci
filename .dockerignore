@@ -1,0 +1,6 @@
+# file: .dockerignore
+.git
+__pycache__
+*.pyc
+node_modules
+.env
