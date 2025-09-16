@@ -33,3 +33,21 @@ jobs:
           echo "IMAGE_URI=$IMAGE_URI"
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
+  deploy-to-ec2:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            aws ecr get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin 983915441388.dkr.ecr.us-east-1.amazonaws.com
+            docker pull 983915441388.dkr.ecr.us-east-1.amazonaws.com/ci_ecr:latest
+            docker stop app || true
+            docker rm app || true
+            docker run -d -p 8000:8000 --name app 983915441388.dkr.ecr.us-east-1.amazonaws.com/ci_ecr:latest
